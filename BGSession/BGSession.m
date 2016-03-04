@@ -13,12 +13,10 @@ static NSString *BGUserDefaultsKey(NSString *key) {
     return [NSString stringWithFormat:@"BGSession_%@", key];
 }
 
-//static BOOL 
 static BGSession *_instance = nil;
 
 @interface BGSession ()
 @property (nonatomic, strong) NSMutableArray *propertyNamesArray;
-@property (nonatomic, strong) NSMutableArray *needSynchronizePropertyArray;
 @end
 
 @implementation BGSession
@@ -28,7 +26,6 @@ static BGSession *_instance = nil;
     dispatch_once(&onceToken, ^{
         _instance = [[[self class] alloc] init];
         [_instance setupSession];
-        [_instance registerSynchronizeSessionRunLoop];
     });
     return _instance;
 }
@@ -41,7 +38,6 @@ static BGSession *_instance = nil;
 
 - (void)setupSession {
     self.propertyNamesArray = [NSMutableArray array];
-    self.needSynchronizePropertyArray = [NSMutableArray array];
     
     //获取所有属性
     unsigned int outCount = 0;
@@ -66,31 +62,12 @@ static BGSession *_instance = nil;
     free(properties);
 }
 
-- (void)registerSynchronizeSessionRunLoop {
-    CFRunLoopObserverRef observerRef = CFRunLoopObserverCreateWithHandler(NULL, kCFRunLoopBeforeWaiting | kCFRunLoopExit, YES, INT_MAX-1, ^(CFRunLoopObserverRef observer, CFRunLoopActivity activity) {
-        [self synchronizeSession];
-    });
-    CFRunLoopAddObserver(CFRunLoopGetCurrent(), observerRef, kCFRunLoopCommonModes);
-    CFRelease(observerRef);
-}
-
-- (void)synchronizeSession {
-    if(self.needSynchronizePropertyArray.count == 0) {
-        return;
-    }
-    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
-    [self.needSynchronizePropertyArray enumerateObjectsUsingBlock:^(NSString *propertyName, NSUInteger idx, BOOL * _Nonnull stop) {
-        id value = [self valueForKey:propertyName];
-        [userDefaults setValue:value forKey:BGUserDefaultsKey(propertyName)];
-    }];
-    [self.needSynchronizePropertyArray removeAllObjects];
-    //同步
-    [userDefaults synchronize];
-}
-
 #pragma makr - KVO method
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSString *,id> *)change context:(void *)context {
-    [self.needSynchronizePropertyArray addObject:keyPath];
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    id value = [self valueForKey:keyPath];
+    [userDefaults setValue:value forKey:BGUserDefaultsKey(keyPath)];
+    [userDefaults synchronize];
 }
 
 @end
