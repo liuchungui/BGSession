@@ -2,7 +2,7 @@
 [![codecov.io](https://codecov.io/github/liuchungui/BGSession/coverage.svg?branch=master)](https://codecov.io/github/liuchungui/BGSession?branch=master)
 
 
-BGSession is a lightweight local data storage in one case, it can automatically synchronize their attributes value to NSUserDefaults.
+BGSession is a lightweight local data storage, it can automatically synchronize their attributes value to NSUserDefaults.
 
 ##Install
 
